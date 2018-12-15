@@ -1,65 +1,68 @@
-const { ApolloServer } = require("apollo-server");
+const { ApolloServer } = require("apollo-server-express");
+const express = require('express');
+const expressPlayground = require("graphql-playground-middleware-express").default;
+const { readFileSync } = require("fs");
 
-const typeDefs = `
-  enum PhotoCategory {
-    SELFIE
-    PORTRAIT
-    ACTION
-    LANDSCAPE
-    GRAPHIC
-  }
+const typeDefs = readFileSync('./typeDefs.graphql', 'UTF-8');
+const resolvers = require('./resolvers');
 
-  type Photo {
-    id: ID!
-    url: String!
-    name: String!
-    description: String
-    category: PhotoCategory!
-  }
+var users = [
+  { "githubLogin": "mHattrup", "name": "Mike Hattrup" },
+  { "githubLogin": "gPlake", "name": "Glen Plake" },
+  { "githubLogin": "sSchmidt", "name": "Scot Schmidt" }
+];
 
-  input PostPhotoInput {
-    name: String!
-    category: PhotoCategory=PORTRAIT
-    description: String
+var photos = [ 
+  {
+    "id": "1",
+    "name": "Dropping the Heart Chute",
+    "description": "The heart chute is one of my favorite chutes",
+    "category": "ACTION",
+    "githubUser": "gPlake",
+    "created": "3-28-1977"
+  },
+  {
+    "id": "2",
+    "name": "Enjoying the sunshine",
+    "category": "SELFIE",
+    "githubUser": "sSchmidt",
+    "created": "1-2-1985"
+  },
+  {
+    "id": "3",
+    "name": "Gunbarrel 25",
+    "description": "25 laps on gunbarrel today",
+    "category": "LANDSCAPE",
+    "githubUser": "sSchmidt",
+    "created": "2018-04-15T19:09:57.308Z"
   }
-  
-  type Query {
-    totalPhotos: Int!
-    allPhotos: [Photo!]!
-  }
+];
 
-  type Mutation {
-    postPhoto(input: PostPhotoInput!): Photo!
-  }
-`
-var photos = [];
+var tags = [
+  { "photoID": "1", "userID": "gPlake" },
+  { "photoID": "1", "userID": "sSchmidt" },
+  { "photoID": "2", "userID": "sSchmidt" },
+  { "photoID": "3", "userID": "mHattrup" },
+  { "photoID": "4", "userID": "gPlake" }
+]
+
 var _id = 0;
 
-const resolvers = {
-  Query: {
-    totalPhotos: () => photos.length,
-    allPhotos: () => photos
-  },
-  Mutation: {
-    postPhoto(parent, args) {
-      var newPhoto = {
-        id: _id++,
-        ...args.input
-      }
-      photos.push(newPhoto);
-      return newPhoto;
-    }
-  },
-  Photo: {
-    url: parent => `http://benpiggot.me/img/${parent.id}.jpg`
-  }
-}
+var app = express();
 
 const server = new ApolloServer({
   typeDefs,
   resolvers
 })
 
-server
-  .listen()
-  .then(({url}) => console.log(`GraphQL Service running on ${url}`))
+server.applyMiddleware({app})
+
+app.get('/', (req, res) => {
+  res.end("Welcome the Photoshare API")
+})
+
+app.get('/playground', expressPlayground({ endpoint: '/graphql' }))
+
+app.listen({ port: 4000 }, () => {
+  console.log(`GraphQL Server running @ http://localhost:4000${server.graphqlPath}`) 
+})
