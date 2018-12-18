@@ -1,5 +1,6 @@
 const { GraphQLScalarType } = require("graphql");
-
+const { authorizeWithGithub } = require('./lib');
+require("dotenv").config()
 
 var users = [
   { "githubLogin": "mHattrup", "name": "Mike Hattrup" },
@@ -45,6 +46,7 @@ var _id = 0;
 
 const resolvers = {
   Query: {
+    me: (parent, args, { currentUser }) => currentUser,
     totalPhotos: (parent, args, { db }) =>
       db.collection('photos')
         .estimatedDocumentCount(),
@@ -72,6 +74,36 @@ const resolvers = {
       }
       photos.push(newPhoto);
       return newPhoto;
+    },
+    async githubAuth(parent, { code }, { db }) {
+      // obtain data from github
+      let {
+        message,
+        access_token,
+        avatar_url,
+        login,
+        name
+      } = await authorizeWithGithub({
+        client_id: process.env.client_id,
+        client_secret: process.env.client_secret,
+        code 
+      })
+      // if message, then something went wrong
+      if (message) {
+        throw new Error(message)
+      }
+      let latestUserInfo = {
+        name,
+        githubLogin: login,
+        githubToken: access_token,
+        avatar: avatar_url
+      }
+      // add or update user record
+      const { ops:[user] } = await db
+        .collection('users')
+        .replaceOne({ githubLogin: login }, latestUserInfo, { upsert: true })
+      
+      return { user, token: access_token }
     }
   },
   Photo: {
