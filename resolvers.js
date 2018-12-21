@@ -65,7 +65,7 @@ const resolvers = {
         .toArray()
   },
   Mutation: {
-    async postPhoto(parent, args, { db, currentUser }) {
+    async postPhoto(parent, args, { db, currentUser, pubsub }) {
       if (!currentUser) {
         throw new Error('Only authorized users can post a photo')
       }
@@ -76,7 +76,8 @@ const resolvers = {
       }
       const { insertedIds } = await db.collection('photos').insert(newPhoto)
       newPhoto.id = insertedIds[0]
-      console.log(newPhoto)
+
+      pubsub.publish('photo-added', { newPhoto })
       return newPhoto
     },
     async githubAuth(parent, { code }, { db }) {
@@ -109,7 +110,7 @@ const resolvers = {
       
       return { user, token: access_token }
     },
-    addFakeUsers: async (root, {count}, {db}) => {
+    addFakeUsers: async (root, {count}, {db, pubsub}) => {
       var randomUserApi = `https://randomuser.me/api/?results=${count}`
 
       var { results } = await fetch(randomUserApi)
@@ -123,12 +124,18 @@ const resolvers = {
       }))
 
       await db.collection('users').insert(users)
+      var newUsers = await db.collection('users')
+        .find()
+        .sort({ _id: -1 })
+        .limit(count)
+        .toArray()
 
+      newUsers.forEach(newUser => pubsub.publish('user-added', { newUser }))
       return users
     },
     async fakeUserAuth(parent, { githubLogin }, { db }) {
       var user = await db.collection('users').findOne({ githubLogin })
-      console.log(user)
+
       if (!user) {
         throw new Error(`Cannot find user with githubLogin "${githubLogin}"`)
       }
@@ -136,6 +143,18 @@ const resolvers = {
       return {
         token: user.githubToken,
         user
+      }
+    }
+  },
+  Subscription: {
+    newPhoto: {
+      subscribe: (parent, args, { pubsub }) => {
+        pubsub.asyncIterator('photo-added')
+      }
+    },
+    newUsers: {
+      subscribe: (parent, args, { pubsub }) => {
+        pubsub.asyncIterator('user-added')
       }
     }
   },

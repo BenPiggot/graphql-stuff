@@ -18,6 +18,16 @@ export const ROOT_QUERY = gql`
   }
 `
 
+const LISTEN_FOR_USERS = gql`
+  subscription {
+    newUser {
+      githubLogin
+      name
+      avatar
+    }
+  }
+`
+
 const App = () =>
   <BrowserRouter>
     <div> 

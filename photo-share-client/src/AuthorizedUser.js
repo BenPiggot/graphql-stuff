@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
-import { Mutation, Query } from 'react-apollo';
+import { Mutation, Query, withApollo, compose } from 'react-apollo';
 import { gql } from 'apollo-boost';
 import { ROOT_QUERY } from './App';
 import { client_id } from './config';
@@ -71,7 +71,10 @@ class AuthorizedUser extends Component {
               signingIn={this.state.signingIn}
               requestCode={this.requestCode}
               logout={() => {
-                localStorage.removeItem('token') 
+                localStorage.removeItem('token')
+                let data = this.props.client.readQuery({ query: ROOT_QUERY })
+                data.me = null
+                this.props.client.writeQuery({ query: ROOT_QUERY, data })
               }}
             />
           )
@@ -82,4 +85,4 @@ class AuthorizedUser extends Component {
   }
 }
 
-export default withRouter(AuthorizedUser);
+export default compose(withApollo, withRouter)(AuthorizedUser);
