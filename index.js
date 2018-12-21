@@ -12,6 +12,7 @@ const resolvers = require('./resolvers');
 async function start() {
   const app = express();
   const MONGO_DB = process.env.DB_HOST;
+  const pubsub = new PubSub();
 
   const client = await MongoClient.connect(
     MONGO_DB,
@@ -19,16 +20,12 @@ async function start() {
   )
 
   const db = client.db();
-  const pubsub = new PubSub();
 
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     context: async ({ req, connection }) => {
-      const githubToken = req ? 
-        req.headers.authorization :
-        connection.context.Authorization
-
+      const githubToken = req ? req.headers.authorization : connection.context.Authorization
       const currentUser = await db.collection('users').findOne({ githubToken })
       return { db, currentUser, pubsub }
     }
@@ -45,9 +42,9 @@ async function start() {
   const httpServer = createServer(app)
   server.installSubscriptionHandlers(httpServer)
 
-  httpServer.listen({ port: 4000 }, () => {
-    console.log(`GraphQL Server running @ http://localhost:4000${server.graphqlPath}`)
-  })
+  httpServer.listen({ port: 4000 }, () =>
+    console.log(`GraphQL Server running at http://localhost:4000${server.graphqlPath}`)
+  )
 };
 
 start();

@@ -152,7 +152,7 @@ const resolvers = {
         pubsub.asyncIterator('photo-added')
       }
     },
-    newUsers: {
+    newUser: {
       subscribe: (parent, args, { pubsub }) => {
         pubsub.asyncIterator('user-added')
       }
