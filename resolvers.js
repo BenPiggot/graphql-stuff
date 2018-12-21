@@ -149,12 +149,12 @@ const resolvers = {
   Subscription: {
     newPhoto: {
       subscribe: (parent, args, { pubsub }) => {
-        pubsub.asyncIterator('photo-added')
+        return pubsub.asyncIterator('photo-added')
       }
     },
     newUser: {
       subscribe: (parent, args, { pubsub }) => {
-        pubsub.asyncIterator('user-added')
+        return pubsub.asyncIterator('user-added')
       }
     }
   },

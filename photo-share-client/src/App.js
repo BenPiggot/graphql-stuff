@@ -21,12 +21,12 @@ export const ROOT_QUERY = gql`
 
 const LISTEN_FOR_USERS = gql`
     subscription {
-        newUser {
-            githubLogin
-            name
-            avatar
-        }
+      newUser {
+      githubLogin
+      name
+      avatar
     }
+  }
 `
 
 class App extends Component {
@@ -36,7 +36,6 @@ class App extends Component {
     this.listenForUsers = client
       .subscribe({ query: LISTEN_FOR_USERS })
       .subscribe(({ data: { newUser } }) => {
-        console.log('here now')
         const data = client.readQuery({ query: ROOT_QUERY })
         data.totalUsers += 1
         data.allUsers = [
