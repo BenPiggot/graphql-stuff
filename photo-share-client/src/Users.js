@@ -14,13 +14,20 @@ const ADD_FAKE_USERS_MUTATION = gql`
 ` 
 const Users = () => 
   <Query query={ROOT_QUERY}>
-    {({data, loading, refetch}) => loading ?
-      <p>Loading users...</p> :
-      <UserList 
-        count={data.totalUsers} 
-        users={data.allUsers}
-        refetchUsers={refetch}
-      />
+    {({data, loading, refetch}) => {
+      console.log(data, loading)
+      if (loading)
+      return <p> Loading users...</p>
+      else {
+        return (
+          <UserList
+            count={data.totalUsers}
+            users={data.allUsers}
+            refetchUsers={refetch}
+          />
+        )
+      }
+    }
     }
   </Query>
 

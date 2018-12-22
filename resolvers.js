@@ -1,6 +1,7 @@
 const { GraphQLScalarType } = require("graphql");
-const { authorizeWithGithub } = require('./lib');
+const { authorizeWithGithub, uploadStream } = require('./lib');
 const fetch = require('node-fetch');
+const path = require('path');
 require("dotenv").config()
 
 var users = [
@@ -76,7 +77,12 @@ const resolvers = {
       }
       const { insertedIds } = await db.collection('photos').insert(newPhoto)
       newPhoto.id = insertedIds[0]
+      var toPath = path.join(
+        __dirname, 'assets', 'photos', `${newPhoto.id}.jpg`
+      )
 
+      const { stream } = await args.input.file
+      await uploadStream(stream, toPath)
       pubsub.publish('photo-added', { newPhoto })
       return newPhoto
     },
@@ -159,8 +165,8 @@ const resolvers = {
     }
   },
   Photo: {
-    id: parent => parent.id.toString() || parent._id.toString(),
-    url: parent => `/img/photos/${parent._id}.jpg`,
+    id: parent => parent.id ? parent.id.toString() : parent._id ? parent._id.toString() : "",
+    url: parent => `http://localhost:4000/assets/photos/${parent._id}.jpg`,
     postedBy: (parent, args, { db }) => 
       db.collection('users').findOne({ githubLogin: parent.userID }),
     taggedUsers: parent => tags

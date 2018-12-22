@@ -4,6 +4,7 @@ const expressPlayground = require("graphql-playground-middleware-express").defau
 const { readFileSync } = require("fs");
 const { MongoClient } = require("mongodb");
 const { createServer } = require('http'); 
+const path = require('path');
 require("dotenv").config()
 
 const typeDefs = readFileSync('./typeDefs.graphql', 'UTF-8');
@@ -38,6 +39,11 @@ async function start() {
   })
 
   app.get('/playground', expressPlayground({ endpoint: '/graphql' }))
+
+  app.use(
+    '/assets/photos',
+    express.static(path.join(__dirname, 'assets', 'photos'))
+  )
 
   const httpServer = createServer(app)
   server.installSubscriptionHandlers(httpServer)
