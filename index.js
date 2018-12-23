@@ -25,6 +25,7 @@ async function start() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    engine: true,
     context: async ({ req, connection }) => {
       const githubToken = req ? req.headers.authorization : connection.context.Authorization
       const currentUser = await db.collection('users').findOne({ githubToken })
@@ -47,6 +48,8 @@ async function start() {
 
   const httpServer = createServer(app)
   server.installSubscriptionHandlers(httpServer)
+
+  httpServer.timeout = 5000
 
   httpServer.listen({ port: 4000 }, () =>
     console.log(`GraphQL Server running at http://localhost:4000${server.graphqlPath}`)
